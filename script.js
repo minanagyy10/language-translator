@@ -22,6 +22,17 @@
     sw:"sw-KE", fa:"fa-IR", ms:"ms-MY", ta:"ta-IN", te:"te-IN"
   };
 
+  // Right-to-left, joined scripts. Letters in these languages must sit in
+  // the same text node to connect properly — splitting them into separate
+  // spans (for the reveal animation) breaks the joining and looks wrong.
+  const RTL_LANGS = ["ar", "he", "ur", "fa"];
+
+  function applyDirection(el, langCode){
+    const rtl = RTL_LANGS.includes(langCode);
+    el.dir = rtl ? "rtl" : "ltr";
+    el.style.textAlign = rtl ? "right" : "left";
+  }
+
   const sourceLangSel = document.getElementById("sourceLang");
   const targetLangSel = document.getElementById("targetLang");
   const sourceText = document.getElementById("sourceText");
@@ -64,19 +75,27 @@
     setTimeout(() => toast.classList.remove("show"), 1600);
   }
 
-  // Renders the translated text with a brief "split-flap" reveal per character.
-  function renderOutput(text){
+  // Renders the translated text. Latin-style scripts get a brief
+  // "split-flap" reveal per character; RTL scripts render as plain text
+  // so the browser can join the letters correctly.
+  function renderOutput(text, langCode){
     outputText.classList.remove("placeholder");
-    outputText.innerHTML = "";
-    const frag = document.createDocumentFragment();
-    text.split("").forEach((ch, i) => {
-      const span = document.createElement("span");
-      span.className = "char";
-      span.style.animationDelay = `${Math.min(i * 12, 600)}ms`;
-      span.textContent = ch;
-      frag.appendChild(span);
-    });
-    outputText.appendChild(frag);
+    applyDirection(outputText, langCode);
+
+    if (RTL_LANGS.includes(langCode)){
+      outputText.textContent = text;
+    } else {
+      outputText.innerHTML = "";
+      const frag = document.createDocumentFragment();
+      text.split("").forEach((ch, i) => {
+        const span = document.createElement("span");
+        span.className = "char";
+        span.style.animationDelay = `${Math.min(i * 12, 600)}ms`;
+        span.textContent = ch;
+        frag.appendChild(span);
+      });
+      outputText.appendChild(frag);
+    }
     targetCharCount.textContent = `${text.length} characters`;
   }
 
@@ -85,9 +104,12 @@
     const from = sourceLangSel.value;
     const to = targetLangSel.value;
 
+    applyDirection(sourceText, from);
+
     if (!text){
       outputText.textContent = "Translation will appear here…";
       outputText.classList.add("placeholder");
+      applyDirection(outputText, "en");
       targetCharCount.textContent = "";
       setStatus("");
       lastTranslation = "";
@@ -100,14 +122,14 @@
     try{
       const translated = await translateViaGoogle(text, from, to);
       lastTranslation = translated;
-      renderOutput(translated);
+      renderOutput(translated, to);
       setStatus("Translated", "success");
     } catch (primaryErr){
       // Google's endpoint failed (rare) — fall back to MyMemory before giving up.
       try{
         const translated = await translateViaMyMemory(text, from, to);
         lastTranslation = translated;
-        renderOutput(translated);
+        renderOutput(translated, to);
         setStatus("Translated", "success");
       } catch (fallbackErr){
         setStatus(fallbackErr.message || "Something went wrong. Please try again.", "error");

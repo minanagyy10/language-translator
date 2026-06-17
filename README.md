@@ -15,7 +15,7 @@ A single-page web app for translating text between 30+ languages, with read-alou
 
 - Text input with a live character counter (500-character limit per request)
 - Source and target language dropdowns with a one-click swap button
-- Live translation via the free [MyMemory Translation API](https://mymemory.translated.net/)
+- Live translation via Google's public translation engine (no key required), with the free [MyMemory API](https://mymemory.translated.net/) as an automatic fallback if Google's endpoint is ever unreachable
 - Text-to-speech playback for both the original and translated text, using the browser's built-in speech engine
 - One-click copy of the translated text to the clipboard
 
@@ -32,7 +32,7 @@ Keep all three files (`index.html`, `style.css`, `script.js`) in the same folder
 
 ## Swapping in a different translation API
 
-The app calls MyMemory by default because it works straight from the browser with no key. If you'd rather use Google Cloud's Translation API, see the commented-out example inside `script.js` — note that Google's API expects a server-side call (so your API key isn't exposed publicly), so you'd need a small backend in front of it.
+The app calls Google's free translation endpoint by default, since it gives much better results than translation-memory services for short or casual phrases, and automatically falls back to MyMemory if that ever fails. If you'd rather use Google Cloud's official, paid Translation API instead, see the commented-out example at the bottom of `script.js` — note that the official API expects a server-side call (so your API key isn't exposed publicly), so you'd need a small backend in front of it.
 
 ## License
 
